@@ -1,4 +1,7 @@
 # Data-Mining-A2
+Type "yarn start" to start the server side app.
+Then type "yarn serve" to start the client-side app.
+
 
 In this assignment, you will be developing a Web-based framework that allows one to create a fact star schema for a data warehouse that consists of only one data mart and can support some simple OLAP operations. Following are the required functionalities in this assignment. Each function may require one or more (static or dynamically generated) Web pages, along with interactions with the database. 
 
@@ -31,3 +34,29 @@ To start with, you may also create the following Meta tables in the database:
 * FactTables (did references DataMart.did, factid, fact_name). Here did and factid together form a unique key. 
  
 The following tutorial on creating a sales data mart is a good reference: https://www.codeproject.com/Articles/652108/Create-First-Data-WareHouse. 
+
+
+# data-mining-a2
+
+## Project setup
+```
+yarn install
+```
+
+### Compiles and hot-reloads for development
+```
+yarn serve
+```
+
+### Compiles and minifies for production
+```
+yarn build
+```
+
+### Lints and fixes files
+```
+yarn lint
+```
+
+### Customize configuration
+See [Configuration Reference](https://cli.vuejs.org/config/).
