@@ -7,11 +7,10 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 //const sql = require('mssql/msnodesqlv8');
 
 Vue.config.productionTip = false
-
-new Vue({
-  render: h => h(App),
-}).$mount('#app')
 // Install BootstrapVue
 Vue.use(BootstrapVue)
 // Optionally install the BootstrapVue icon components plugin
 Vue.use(IconsPlugin)
+new Vue({
+  render: h => h(App),
+}).$mount('#app')
