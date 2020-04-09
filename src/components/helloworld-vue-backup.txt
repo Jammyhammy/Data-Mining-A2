@@ -1,6 +1,6 @@
 <template>
   <div class="hello">
-    <h1></h1>
+    <h1>{{ msg }}</h1>
 
     <b-form-group label="Select or create a data mart?">
       <b-form-radio v-model="selected" name="blep-radios" value="A">Create new data mart</b-form-radio>
@@ -9,24 +9,10 @@
     </b-form-group>
     <div class="mt-3">Selected: <strong>{{ selected }}</strong></div>    
     <template v-if="selected === 'A'">
-      <h3>Creating a Data Mart.</h3>
-      <b-form @submit="onDataSubmit" v-if="show">
-        <b-form-group
-          id="dm-input-group-1"
-          label="Data mart name:"
-          label-for="dm-input-1"
-          description="Scroll down if you've created one">
-          <b-form-input
-            id="dm-input-1"
-            v-model="addMartForm.mart"
-            required
-            placeholder="Enter data mart name"></b-form-input>
-        </b-form-group>
-        <b-button type="submit" variant="primary">Submit</b-button>
-      </b-form>
+
     </template>
     <template v-if="selected === 'C'">
-      <h3>Creating a Data Mart with everything.</h3>
+      <h3>Creating a Data Mart.</h3>
       <b-form @submit="onSubmit" @reset="onReset" v-if="show">
         <b-form-group
           id="input-group-1"
@@ -70,6 +56,9 @@
         <b-button type="submit" variant="primary">Submit</b-button>
         <b-button type="reset" variant="danger">Reset</b-button>
       </b-form>
+      <b-card class="mt-3" header="This is what will be submitted">
+        <pre class="m-0">{{ form }}</pre>
+      </b-card>
     </template>
     
     <template v-if="selected === 'B'">
@@ -231,12 +220,26 @@
           
           <template v-if="olapForm.format.length > 0">
             <div class="add-olap-form">
-              <b-form-group id="olinput-group-7" label-for="olinput-7">
-                <label for="olinput-7">Specify measures for {{olapForm.name}}. Example format for measure: {{olapForm.format}}</label>          
-                <b-form-input
-                  id="olinput-7" 
-                  v-model="olapForm.measure"></b-form-input>
+              <b-form-group id="olinput-group-4" label-for="olinput-4">
+                <label for="oldim-sb">Number of Measures:</label>
+                <b-form-spinbutton id="oldim-sb" v-model="olDimNum" @change="onOLDimChange($event)" min="0" max="20">
+                </b-form-spinbutton>
               </b-form-group>
+              <p> Measures for Rollup/Drilldown (top to bottom in order of increasing granularity): </p>
+              <div v-for="measure in olapForm.measures">
+                <b-form-group :id="`olfinput-group-7-${measure.id}`" :label-for="`olfinput-7-${measure.id}`">
+                  <label :for="`olfinput-7-${measure.id}`"></label>          
+                  <b-form-select
+                    :id="`olfinput-7-${measure.id}`"
+                    v-model="measure.name"
+                    :options="olapForm.columns">
+                  <template v-slot:first>
+                    <b-form-select-option value="" disabled>-- Please select an option --</b-form-select-option>
+                  </template>      
+                  </b-form-select>
+                </b-form-group> 
+                                 
+              </div>
             <b-button type="button" variant="primary" @click="onOlapSubmit($event)">Submit</b-button>
             </div>
             <template v-if="olapResults.length > 0">
@@ -287,9 +290,6 @@ export default {
       dimension: null,
       fact: null,
       createDimensionOptions: [],
-      addMartForm: {
-        name:''
-      },
       addForm: {
         name: '',
         format: '',
@@ -400,23 +400,7 @@ export default {
           selected:"B"
         })
       }
-    },
-    onDataSubmit(evt) {
-      var query = `INSERT INTO [dbo].[DataMart] ([Name]) VALUES ('${this.addMartForm.mart}')`
-      var body = {sql: query}
-      console.log(body)
-      axios.post(`${this.uri}/postQuery`, body)
-      .then(response => {
-        this.$bvToast.toast(`${query} was successful!`, {
-          title: 'Your sql submitted successfully.',
-          autoHideDelay: 3000
-        })        
-        console.log(response)
-      })
-      .catch(function (error) {
-        console.log(error);
-      });   
-    }, 
+    },     
     onMartChange(evt) {
       axios.get("http://localhost:5000/getQuery?sql=" 
       + encodeURIComponent(`SELECT * FROM Dimension WHERE DataMartID = ${evt}`))
@@ -436,7 +420,6 @@ export default {
       axios.get("http://localhost:5000/getQuery?sql=" 
       + encodeURIComponent(`SELECT column_name from information_schema.columns where table_name = '${evt.name}'`))
       .then(response => {
-        debugger;
         response.data.shift()
         var dm = response.data.map((x) => name = `'${x.column_name}'`).reduce( (a,x) => `${a},${x}`)
         this.addFact.name = this.fact.name;
@@ -495,29 +478,31 @@ export default {
         response.data.shift()
         var dm = response.data.map((x) => name = `${x.column_name}`).reduce( (a,x) => `${a},${x}`)
         this.olapForm.columns = response.data.map((x,i) => ({value: i, text: x.column_name}));
-        debugger;
         this.olapForm.name = this.olapDimension.name;
         this.olapForm.format = dm;
       })
       .catch(error => (console.log(error)))
     },
     onOlapSubmit(evt) {
-      console.log(this.olapForm.measure)
-      if(this.olapForm.measure.indexOf(',') === -1) {
+      
+      // if(this.olapForm.measure.indexOf(',') !== -1) {
+      //   axios.get("http://localhost:5000/getQuery?sql=" 
+      //   + encodeURIComponent(`SELECT ${this.olapForm.measure}, COUNT(*) AS 'Count' from ${this.olapForm.name} GROUP BY ${this.olapForm.measure} WITH ROLLUP ORDER BY Count`))
+      //   .then(response => {
+      //     this.olapResults = response.data
+      //   })
+      //   .catch(error => (console.log(error)))
+      // } else {
+        var test = this.olapForm.measures.map(x => `COALESCE(${this.olapForm.columns[x.name].text}, 'TOTAL')`).join();
+        var test2 = this.olapForm.measures.map(x => `${this.olapForm.columns[x.name].text}`).join();
+        var query = `SELECT ${test}, COUNT(*) AS 'Count' from ${this.olapForm.name} GROUP BY ${test2} WITH ROLLUP`
         axios.get("http://localhost:5000/getQuery?sql=" 
-        + encodeURIComponent(`SELECT ${this.olapForm.measure}, COUNT(*) AS 'Count' from ${this.olapForm.name} GROUP BY ${this.olapForm.measure} WITH ROLLUP`))
+        + encodeURIComponent(query))
         .then(response => {
           this.olapResults = response.data
         })
         .catch(error => (console.log(error)))
-      } else {
-        axios.get("http://localhost:5000/getQuery?sql=" 
-        + encodeURIComponent(`SELECT ${this.olapForm.measure}, COUNT(*) AS 'Count' from ${this.olapForm.name} GROUP BY ${this.olapForm.measure} WITH ROLLUP`))
-        .then(response => {
-          this.olapResults = response.data
-        })
-        .catch(error => (console.log(error)))
-      }
+      // }
     },
     onRecordSubmit(evt) {
       var query = `INSERT INTO ${this.addForm.name} VALUES (${this.addForm.record})`
@@ -525,10 +510,6 @@ export default {
       console.log(body)
       axios.post(`${this.uri}/postQuery`, body)
       .then(response => {
-        this.$bvToast.toast(`${query} was successful!`, {
-          title: 'Your sql submitted successfully.',
-          autoHideDelay: 3000
-        })           
         console.log(response)
       })
       .catch(function (error) {
@@ -541,10 +522,6 @@ export default {
       console.log(body)
       axios.post(`${this.uri}/postQuery`, body)
       .then(response => {
-        this.$bvToast.toast(`${query} was successful!`, {
-          title: 'Your sql submitted successfully.',
-          autoHideDelay: 3000
-        })           
         console.log(response)
       })
       .catch(function (error) {
@@ -564,10 +541,6 @@ export default {
               console.log(body)
               axios.post(`${this.uri}/postQuery`, body)
               .then(response => {
-                this.$bvToast.toast(`${query} was successful!`, {
-                  title: 'Your sql submitted successfully.',
-                  autoHideDelay: 3000
-                })                   
                 console.log(response)
               })
               .catch(function (error) {
@@ -575,7 +548,7 @@ export default {
               });
           }
       }
-      //refresh()       
+      refresh()       
     },
     onCFSubmit(evt) {
       evt.preventDefault()
@@ -586,39 +559,17 @@ export default {
       var dm = this.cfform.dimensions.map((x) => name = x.name).reduce( (a,x) => `${a},${x}`)
       var query4 = `EXEC spBuildFactTable '${fact}', ${martId}, '${measures}', '${dm}'`
       console.log(query4)  
-      var query = query4
-      var body = {sql: query}
-      console.log(body)
-      axios.post(`${this.uri}/postQuery`, body)
-      .then(response => {
-        this.$bvToast.toast(`${query} was successful!`, {
-          title: 'Your sql submitted successfully.',
-          autoHideDelay: 3000
-        })           
-        console.log(response)
-      })
-      .catch(function (error) {
-        this.$bvToast.toast(`${query} had an error, please reload the page.`, {
-          title: 'Not successful.',
-          autoHideDelay: 3000
-        })            
-        console.log(error);
-      });       
     },    
     onSubmit(evt) {
       evt.preventDefault()
       axios.post(`${this.uri}/postForm`, this.form)
         .then(function (response) {
-          this.$bvToast.toast(`SQL successful!`, {
-            title: 'Your sql submitted successfully.',
-            autoHideDelay: 3000
-          })             
           console.log(response);
         })
         .catch(function (error) {
           console.log(error);
         });
-      //refresh()
+      refresh()
     },
     onReset(evt) {
       evt.preventDefault()

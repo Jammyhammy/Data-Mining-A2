@@ -3,9 +3,22 @@
 //server.js
 
 
+//todo: finish implementing the create dimension, create fact table, etc. stuffs.
+
+//For fact table just have them select which dimensions go into a fact table
+
+//Can select or create new data mart.
+
+//Seperate data mart creation
+//When adding a record to a dimension make sure to call it 'specify concept hierarchy'
+//Move dimensions to Creating dimensions and its attributes for the specified Data Mart.
+//
+
 //Add record, format = r1,r2,parent,level
 //At the end of each dimension create table statement add in parent nvarchar(50) and level nvarchar(50)
+
 //for dimension attribute tell them that it must have parent,level
+
 var express = require('express'),
     bodyParser = require('body-parser');
 
@@ -62,14 +75,16 @@ app.post('/postForm', function(req, res){
                 var martId = result.recordset[0][""]
                 for(var i = 0; i < dimensions.length; i++) {
                     var dim = dimensions[i]
-                    var query3 = `EXEC spBuildDimensionTable '${dim.name}', ${martId}, '${dim.attributes},Parent,Level'`
-                    pool1.request().query(query3, (err, result) => {
-                        if(err){
-                            console.log(err)
-                            return res.status(404).send(err)
-                        }
-                        console.log(result)
-                    })
+                    if(dim.selected === 'A') {
+                        var query3 = `EXEC spBuildDimensionTable '${dim.name}', ${martId}, '${dim.attributes}'`
+                        pool1.request().query(query3, (err, result) => {
+                            if(err){
+                                console.log(err)
+                                return res.status(404).send(err)
+                            }
+                            console.log(result)
+                        })
+                    }
                 }
                 var dm = dimensions.map((x) => name = x.name).reduce( (a,x) => `${a},${x}`)
                 var query4 = `EXEC spBuildFactTable '${fact}', ${martId}, '${measures}', '${dm}'`
@@ -100,8 +115,6 @@ app.get('/getDataMarts', function(req,res){
         })
     })
 });
-
-//Add in parent, level for dimensions
 
 app.get('/getQuery', function(req,res){
     let query = req.query.sql;
