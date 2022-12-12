@@ -14,7 +14,7 @@
     "bootstrap": "^4.4.1",
     "bootstrap-vue": "^2.9.0",
     "core-js": "^3.6.4",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "msnodesqlv8": "^1.0.1",
     "mssql": "^6.2.0",
     "vue": "^2.6.11"
